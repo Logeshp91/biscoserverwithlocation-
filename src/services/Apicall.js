@@ -31,20 +31,36 @@
 //     }
 // };
 
-import axios from 'axios'; 
-export const baseUrl = "https://testserver.biztechnovations.com"; 
-// export const baseUrl = "https://devserver.biztechnovations.com";
-// export const baseUrl = "https://siddhi.biscogroup.com";
- export const endPoint = {
- postauthendication: '/web/session/authenticate', 
-postcreatevisit: '/web/dataset/call_kw', 
-postAccessRead:'/api/visit/verified', 
-postconvert:"/api/visit/convert",
-postOutstanding:'/web/dataset/call_kw' ,
-postCustomerList:'/web/dataset/call_kw'
+import axios from 'axios';
 
-}; const headers = {
- 'Content-Type': 
-'application/json',
- 'Accept': '*/*' 
-}; export const ApiMethod = { POST: (url, data) => { return axios.post(baseUrl + url, data, { headers: headers, withCredentials: true }); } };
+let dynamicBaseUrl = null;   
+
+export const setBaseUrl = (url) => {
+  dynamicBaseUrl = url;      
+};
+
+export const endPoint = {
+  postauthendication: "/web/session/authenticate",
+  postAccessRead: "/api/visit/verified",
+};
+
+const headers = {
+  "Content-Type": "application/json",
+  "Accept": "*/*",
+};
+
+export const ApiMethod = {
+  POST: (url, data) => {
+    const server = dynamicBaseUrl || data?.serverUrl;
+
+    if (!server) {
+      throw new Error("Base URL not set!");
+    }
+
+    return axios.post(server + url, data, {
+      headers,
+      withCredentials: true,
+    });
+  },
+};
+

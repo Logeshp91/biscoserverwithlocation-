@@ -23,7 +23,7 @@ import { getAnalytics, logEvent } from '@react-native-firebase/analytics';
 import { getApp } from '@react-native-firebase/app';
 
 
-const Login = ({ navigation }) => {
+const Login = ({  }) => {
   const dispatch = useDispatch();
   const {
     postauthendicationLoading,
@@ -38,6 +38,10 @@ const Login = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [location, setLocation] = useState(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
+const [serverUrl, setServerUrl] = useState('');
+const [dbName, setDbName] = useState('');
+const [showServerSettings, setShowServerSettings] = useState(false);
+
 
   const pinInputs = useRef([]);
 
@@ -56,7 +60,7 @@ logEvent(analytics, 'screen_view', {
 
     if (uid) {
       Alert.alert('Login successful!');
-       navigation.navigate('TabNavigation');
+      //  navigation.navigate('TabNavigation');
     } else if (errorMsg) {
       Alert.alert('Login Failed', errorMsg);
       setPassword('');
@@ -67,7 +71,6 @@ logEvent(analytics, 'screen_view', {
     if (mobileNumber && !phone) setPhone(mobileNumber);
   }, [mobileNumber]);
 
-  // ✅ Request permissions on first launch
    useEffect(() => {
      const requestAllPermissions = async () => {
        try {
@@ -91,6 +94,33 @@ logEvent(analytics, 'screen_view', {
  
      requestAllPermissions();
    }, []);
+
+const fetchLocation = () => {
+  Geolocation.getCurrentPosition(
+    pos => {
+      console.log("Lat:", pos.coords.latitude);
+      console.log("Long:", pos.coords.longitude);
+      setLocation(pos.coords);
+    },
+    err => {
+      console.warn("❌ Location error:", err.message);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 5000,
+      forceRequestLocation: true,
+      showLocationDialog: true, 
+    }
+  );
+};
+
+useEffect(() => {
+  if (permissionGranted) {
+    fetchLocation();
+  }
+}, [permissionGranted]);
+
  
   const getSimNumbers = async () => {
     try {
@@ -111,20 +141,7 @@ logEvent(analytics, 'screen_view', {
     }
   };
 
-  const fetchLocation = async () => {
-    try {
-      const hasPermission = await requestLocationPermission();
-      if (!hasPermission) return;
 
-      Geolocation.getCurrentPosition(
-        pos => setLocation(pos.coords),
-        err => console.warn('❌ Location error:', err.message),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
-      );
-    } catch (err) {
-      console.log('❌ GPS fetch error', err);
-    }
-  };
   
 
   const requestLocationPermission = async () => {
@@ -134,25 +151,37 @@ logEvent(analytics, 'screen_view', {
     return ask === RESULTS.GRANTED;
   };
 
-  const handleLogin = () => {
-    if (!phone || !password) {
-      Alert.alert('Validation', 'Username and password are required');
-      return;
-    }
+const handleLogin = () => {
+  if (!serverUrl) {
+    Alert.alert("Validation", "Please enter Server URL");
+    return;
+  }
+  if (!dbName) {
+    Alert.alert("Validation", "Please enter Database Name");
+    return;
+  }
+  if (!phone || !password) {
+    Alert.alert("Validation", "Username and password are required");
+    return;
+  }
 
-    const loginPayload = {
-      jsonrpc: '2.0',
-      params: {
-        db: 'bisco_siddhi_19112025',
-        login: phone.trim(),
-        password: password.trim(),
-        latitude: location?.latitude || 0,
-        longitude: location?.longitude || 0,
-      },
-    };
+  setServerUrl(serverUrl); 
 
-    dispatch(postauthendication(loginPayload));
+  const loginPayload = {
+    serverUrl: serverUrl,
+    jsonrpc: '2.0',
+    params: {
+      db: dbName,
+      login: phone.trim(),
+      password: password.trim(),
+      latitude: location?.latitude || 0,
+      longitude: location?.longitude || 0,
+    },
   };
+
+  dispatch(postauthendication(loginPayload));
+};
+
 
   const isLoginEnabled = phone && password;
 
@@ -176,13 +205,47 @@ logEvent(analytics, 'screen_view', {
             </View>
 
             <Image source={require('../../assets/girlimages.png')} style={styles.centerImage} />
+{/* Settings Icon */}
+<TouchableOpacity 
+  onPress={() => setShowServerSettings(!showServerSettings)} 
+  style={{ alignSelf: 'flex-end', marginBottom: 10 }}
+>
+  <MaterialCommunityIcons 
+    name="arrow-down-bold-circle" 
+    size={28} 
+    color="#444" 
+  />
+</TouchableOpacity>
+
+{/* Show / Hide Server Settings */}
+{showServerSettings && (
+  <>
+    <Text style={styles.label}>Server URL</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="https://yourserver.com"
+      value={serverUrl}
+      onChangeText={setServerUrl}
+    />
+
+    <Text style={styles.label}>Database Name</Text>
+    <TextInput
+      style={styles.input}
+      placeholder="Enter database name"
+      value={dbName}
+      onChangeText={setDbName}
+    />
+  </>
+)}
 
             <Text style={styles.label}>Phone no..</Text>
             <View style={styles.phoneInputContainer}>
               <View style={styles.flagContainer}>
                 <Image source={require('../../assets/india.png')} style={styles.flag} />
               </View>
+
               <View style={styles.separator} />
+
               <TextInput
                 style={styles.phoneInput}
                 keyboardType="default"
@@ -247,4 +310,13 @@ const styles = StyleSheet.create({
   pinlabel: { fontSize: 14, marginTop: '5%', paddingHorizontal: 10 },
   loginButton: { paddingVertical: 14, borderRadius: 50, marginBottom: 10 },
   loginButtonText: { color: '#fff', textAlign: 'center', fontSize: 16, fontWeight: 'bold' },
+  input: {
+  borderWidth: 1,
+  borderRadius: 30,
+  paddingHorizontal: 15,
+  height: 45,
+  fontSize: 15,
+  marginBottom: 15,
+  color: '#000',
+},
 });

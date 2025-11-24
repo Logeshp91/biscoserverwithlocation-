@@ -3,9 +3,6 @@ export function handleNotificationNavigation(data) {
 
   console.log("Navigate from Notification:", data);
 
-  // Example: Send navigationId in FCM payload
-  // { "navigationId": "Orders" }
-
   const screen = data.navigationId;
 
   if (screen && global.myNavigation) {
