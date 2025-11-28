@@ -30,37 +30,44 @@
 //         });
 //     }
 // };
+import axios from "axios";
 
-import axios from 'axios';
-
-let dynamicBaseUrl = null;   
+let dynamicBaseUrl = null;
+let sessionId = null;  
 
 export const setBaseUrl = (url) => {
-  dynamicBaseUrl = url;      
+  dynamicBaseUrl = url;
 };
 
 export const endPoint = {
+  postmobileauth: "/checkmobile",
   postauthendication: "/web/session/authenticate",
   postAccessRead: "/api/visit/verified",
-};
-
-const headers = {
-  "Content-Type": "application/json",
-  "Accept": "*/*",
+  postcreatevisit: "/web/dataset/call_kw",
 };
 
 export const ApiMethod = {
-  POST: (url, data) => {
+  POST: async (url, data) => {
     const server = dynamicBaseUrl || data?.serverUrl;
+    if (!server) throw new Error("Base URL not set!");
 
-    if (!server) {
-      throw new Error("Base URL not set!");
-    }
-
-    return axios.post(server + url, data, {
-      headers,
+    const response = await axios.post(server + url, data, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(sessionId && { Cookie: `session_id=${sessionId}` }),  
+      },
       withCredentials: true,
     });
+
+      if (url === endPoint.postauthendication && response.headers['set-cookie']) {
+      const cookie = response.headers['set-cookie'][0];
+      const match = cookie.match(/session_id=([^;]+)/);
+      if (match) {
+        sessionId = match[1];
+        console.log("🔐 Odoo Session saved from headers:", sessionId);
+      }
+    }
+
+    return response;
   },
 };
-

@@ -16,9 +16,6 @@ const store = createStore(
 sagaMiddleware.run(rootSaga);
 
 export default store;
-store.js
-
-store.js
 
 // const createSagaMiddleware = require('redux-saga').default;
 // const { configureStore } = require('@reduxjs/toolkit');

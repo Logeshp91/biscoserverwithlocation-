@@ -1,184 +1,173 @@
-// import React, { useEffect } from 'react';
-// import { Alert, PermissionsAndroid, Platform } from 'react-native';
-// import { Provider } from 'react-redux';
-// import store from './src/redux/store';
-// import Navigation from './src/navigation/StackNavigation';
-// import analytics from '@react-native-firebase/analytics';
-// import messaging from '@react-native-firebase/messaging';
+import React, { useEffect } from 'react';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import store from './src/redux/store';
+import Navigation from './src/navigation/StackNavigation';
+import messaging from '@react-native-firebase/messaging';
+import notifee, { AndroidImportance } from '@notifee/react-native';
+import BackgroundFetch from 'react-native-background-fetch';
+import { startLocationTracking, stopLocationTracking, isLocationEnabled } from './src/utils/LocationService';
+import { setFcmToken } from './src/redux/slices/fcmSlice';
 
-// const App = () => {
-
-//   const requestAndroidPermission = async () => {
-//     if (Platform.OS === 'android') {
-//       try {
-//         await PermissionsAndroid.request(
-//           PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
-//         );
-//       } catch (e) {
-//         console.log("Permission error:", e);
-//       }
-//     }
-//   };
-
-//   useEffect(() => {
-//     analytics().logAppOpen();
-//   }, []);
-
-//   useEffect(() => {
-//     requestAndroidPermission();
-
-//     async function setupFCM() {
-//       try {
-//         const authStatus = await messaging().requestPermission();
-//         const enabled =
-//           authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-//           authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-//         if (!enabled) {
-//           console.log("❌ Notification permission denied");
-//         }
-
-//         const fcmToken = await messaging().getToken();
-
-//         if (!fcmToken) {
-//           Alert.alert(
-//             "Enable Google Play Services",
-//             "Notifications cannot work because Google Play Services is disabled or unavailable. Please enable it in your device settings."
-//           );
-//           return;
-//         }
-
-//         console.log("🔥 FCM Token:", fcmToken);
-
-//         messaging().onMessage(async remoteMessage => {
-//           console.log("📩 Foreground Notification:", remoteMessage);
-//         });
-
-//       } catch (err) {
-//         console.log("⚠️ FCM Error:", err);
-
-//         if (String(err).includes("SERVICE_NOT_AVAILABLE")) {
-//           Alert.alert(
-//             "Google Play Services Required",
-//             "Please enable or update Google Play Services to receive notifications."
-//           );
-//         }
-//       }
-//     }
-
-//     setupFCM();
-
-//   }, []);
-
-
-//   return (
-//     <Provider store={store}>
-//       <Navigation />
-//     </Provider>
-//   );
-// };
-
-// export default App;
-
-
-
-import React, { useEffect } from "react";
-import { Alert, PermissionsAndroid, Platform } from "react-native";
-import { Provider } from "react-redux";
-import store from "./src/redux/store";
-import Navigation from "./src/navigation/StackNavigation";
-import analytics from "@react-native-firebase/analytics";
-import messaging from "@react-native-firebase/messaging";
-import {
-  requestLocationPermission,
-  startLocationTracking,
-  stopLocationTracking,
-} from "./src/utils/LocationService";
+const AppWrapper = () => (
+  <Provider store={store}>
+    <App />
+  </Provider>
+)
 
 const App = () => {
+  const dispatch = useDispatch();
+const loggedIn = useSelector(state => state.postauthendicationReducer.isLoggedIn);
 
   useEffect(() => {
-    analytics().logAppOpen();
-  }, []);
-
-  // Notification setup
-  const requestAndroidPermission = async () => {
-    if (Platform.OS === "android") {
-      await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
-      );
-    }
-  };
-
-  // Setup FCM
-  useEffect(() => {
-    requestAndroidPermission();
-
-    async function setupFCM() {
-      try {
-        const authStatus = await messaging().requestPermission();
-        const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-        if (!enabled) {
-          console.log("❌ Notification permission denied");
-        }
-
-        const fcmToken = await messaging().getToken();
-
-        if (!fcmToken) {
-          Alert.alert(
-            "Enable Google Play Services",
-            "Notifications cannot work because Google Play Services is disabled or unavailable. Please enable it in your device settings."
-          );
-          return;
-        }
-
-        console.log("🔥 FCM Token:", fcmToken);
-
-        messaging().onMessage(async remoteMessage => {
-          console.log("📩 Foreground Notification:", remoteMessage);
-        });
-
-      } catch (err) {
-        console.log("⚠️ FCM Error:", err);
-
-        if (String(err).includes("SERVICE_NOT_AVAILABLE")) {
-          Alert.alert(
-            "Google Play Services Required",
-            "Please enable or update Google Play Services to receive notifications."
-          );
-        }
-      }
-    }
-
-    setupFCM();
-
-  }, []);
-  // Location Tracking
-  useEffect(() => {
-    async function setupLocation() {
-      const granted = await requestLocationPermission();
-      if (!granted) return;
-
-      startLocationTracking((coords) => {
-        console.log("📍 Live Location:", coords);
+    if (loggedIn) {
+      console.log("🔵 User logged in — Start Live Tracking");
+      startLocationTracking(coords => {
+        console.log("📍 Live:", coords);
       });
-    }
-
-    setupLocation();
-
-    return () => {
+    } else {
+      console.log("🔴 User logged out — Stop Tracking");
       stopLocationTracking();
-    };
+    }
+  }, [loggedIn]);
+
+  // 🔥 FCM Setup
+  useEffect(() => {
+    (async () => {
+      await messaging().requestPermission();
+      const token = await messaging().getToken();
+      if (token) dispatch(setFcmToken(token));
+    })();
+  }, [dispatch]);
+
+  // 🔥 Background Fetch
+  useEffect(() => {
+    BackgroundFetch.configure(
+      {
+        minimumFetchInterval: 15,
+        stopOnTerminate: false,
+        startOnBoot: true,
+        enableHeadless: true,
+      },
+      async taskId => {
+        console.log("[BackgroundFetch] Task:", taskId);
+
+        const enabled = await isLocationEnabled();
+        if (!enabled) {
+          await notifee.displayNotification({
+            title: "GPS Disabled",
+            body: "Turn on GPS for live tracking",
+            android: { channelId: "default", importance: AndroidImportance.HIGH },
+          });
+        }
+
+        BackgroundFetch.finish(taskId);
+      },
+      err => console.log("BackgroundFetch ERROR:", err)
+    );
   }, []);
 
-  return (
-    <Provider store={store}>
-      <Navigation />
-    </Provider>
-  );
+  return <Navigation />;
 };
 
-export default App;
+export default AppWrapper;
+
+
+// import React, { useEffect } from 'react';
+// import { Provider, useDispatch } from 'react-redux';
+// import store from './src/redux/store';
+// import Navigation from './src/navigation/StackNavigation';
+// import messaging from '@react-native-firebase/messaging';
+// import notifee from '@notifee/react-native';
+// import {
+//   requestLocationPermission,
+//   startLocationTracking,
+//   stopLocationTracking,
+//   isLocationEnabled,
+// } from './src/utils/LocationService';
+// import { setFcmToken } from './src/redux/slices/fcmSlice';
+// import BackgroundFetch from 'react-native-background-fetch';
+
+// const AppWrapper = () => (
+//   <Provider store={store}>
+//     <App />
+//   </Provider>
+// );
+
+// const App = () => {
+//   const dispatch = useDispatch();
+
+//   // Foreground location tracking
+//   useEffect(() => {
+//     const setupLocation = async () => {
+//       const granted = await requestLocationPermission();
+//       if (!granted) return;
+
+//       startLocationTracking(coords => {
+//         console.log('📍 Live Location:', coords);
+//       });
+//     };
+
+//     setupLocation();
+
+//     return () => stopLocationTracking();
+//   }, []);
+
+//   // FCM setup
+//   useEffect(() => {
+//     const setupFCM = async () => {
+//       const authStatus = await messaging().requestPermission();
+//       const enabled =
+//         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+//         authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+//       if (!enabled) console.log('❌ Notification permission denied');
+
+//       const fcmToken = await messaging().getToken();
+//       if (fcmToken) dispatch(setFcmToken(fcmToken));
+
+//       // Foreground notification listener
+//       messaging().onMessage(async remoteMessage => {
+//         console.log('📩 Foreground Notification:', remoteMessage);
+//       });
+//     };
+
+//     setupFCM();
+//   }, [dispatch]);
+
+//   // BackgroundFetch periodic location check
+//   useEffect(() => {
+//     const configureBackgroundFetch = async () => {
+//       BackgroundFetch.configure(
+//         {
+//           minimumFetchInterval: 15, // minutes
+//           stopOnTerminate: false,
+//           startOnBoot: true,
+//           enableHeadless: true,
+//         },
+//         async taskId => {
+//           console.log('[BackgroundFetch] Event:', taskId);
+
+//           const enabled = await isLocationEnabled();
+//           if (!enabled) {
+//             await notifee.displayNotification({
+//               title: 'Location Disabled',
+//               body: 'Please enable GPS to continue live tracking',
+//               android: { channelId: 'default', importance: notifee.AndroidImportance.HIGH },
+//             });
+//           }
+
+//           BackgroundFetch.finish(taskId);
+//         },
+//         error => {
+//           console.log('[BackgroundFetch] configure error:', error);
+//         }
+//       );
+//     };
+
+//     configureBackgroundFetch();
+//   }, []);
+
+//   return <Navigation />;
+// };
+
+// export default AppWrapper;
