@@ -42,7 +42,7 @@ const postmobileauthReducer = (state = initial, action) => {
       return {
         ...state,
         postmobileauthLoading: false,
-        postmobileauthData: [],
+        postmobileauthData: null,  // ✅ fix here
         postmobileauthError: action.payload,
         userToken: null,
       };
@@ -51,11 +51,13 @@ const postmobileauthReducer = (state = initial, action) => {
       return {
         ...state,
         postmobileauthLoading: false,
-        postmobileauthData: [],
+        postmobileauthData: null,  // ✅ fix here
         postmobileauthError: null,
         postmobileauthErrorInvalid: action.payload,
         userToken: null,
       };
+      case actionTypes.POST_POSTMOBILEAUTH_RESET:
+      return { ...state, postmobileauthData: null, postmobileauthError: null };
 
     case actionTypes.CLEAR_LOGIN_FIELDS:
       return {

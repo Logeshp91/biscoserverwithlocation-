@@ -5,40 +5,36 @@ import actionTypes from "../actionTypes";
 function* postmobileauthSaga(action) {
   try {
     const response = yield call(ApiMethod.POST, endPoint.postmobileauth, action.payload);
-    const data = response?.data ?? response;
+    console.log("responsemobile", response);
+    console.log("📡 POST /postmobileauth payload:", action.payload);
+    console.log("📡 POST /postmobileauth response:", response);
 
-    if (data?.result) {
-      yield put({
-        type: actionTypes.POST_POSTMOBILEAUTH_SUCCESS,
-        payload: data.result,
-      });
+    const result = response?.data?.result;
 
-    } else if (data?.error) {
+    if (!result) {
       yield put({
         type: actionTypes.POST_POSTMOBILEAUTH_FAILURE,
-        payload: data.error.message,
+        payload: { status: "error", message: "No response from server" }
       });
-
+      return;
+    }
+    if (result.status === "success") {
+      yield put({
+        type: actionTypes.POST_POSTMOBILEAUTH_SUCCESS,
+        payload: result
+      });
     } else {
       yield put({
         type: actionTypes.POST_POSTMOBILEAUTH_FAILURE,
-        payload: "Authentication failed",
+        payload: result
       });
     }
 
   } catch (err) {
-
-    if (err.response?.status === 401) {
-      yield put({
-        type: actionTypes.POST_POSTMOBILEAUTH_FAILURE_INVALID,
-        payload: "Invalid credentials",
-      });
-    } else {
-      yield put({
-        type: actionTypes.POST_POSTMOBILEAUTH_FAILURE,
-        payload: err.message || "Server error",
-      });
-    }
+    yield put({
+      type: actionTypes.POST_POSTMOBILEAUTH_FAILURE,
+      payload: { status: "error", message: err.message || "Server error" }
+    });
   }
 }
 

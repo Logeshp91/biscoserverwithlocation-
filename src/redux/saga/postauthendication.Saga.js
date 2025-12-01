@@ -3,23 +3,19 @@ import { endPoint, ApiMethod } from "../../services/Apicall";
 import actionTypes from "../actionTypes";
 
 function* postauthendicationSaga(action) {
-  console.log("action",action);
+  console.log("Action payload:", action.payload);
   
   try {
     const response = yield call(ApiMethod.POST, endPoint.postauthendication, action.payload);
-        console.log("respons1",response);
-    const data = response?.data ?? response;
+    console.log("Login result:", response);
 
-    if (data?.result) {
+    const data = response?.data;
+    const result = data?.result;
+
+    if (result?.uid) {
       yield put({
         type: actionTypes.POST_POSTAUTHENDICATION_SUCCESS,
-        payload: data.result,
-       uid: data.result?.uid || null 
-      });
-    } else if (data?.error) {
-      yield put({
-        type: actionTypes.POST_POSTAUTHENDICATION_FAILURE,
-        payload: data.error.message,
+        payload: result,
       });
     } else {
       yield put({
@@ -27,8 +23,8 @@ function* postauthendicationSaga(action) {
         payload: 'Authentication failed',
       });
     }
-  } catch (err) {
 
+  } catch (err) {
     if (err.response?.status === 401) {
       yield put({
         type: actionTypes.POST_POSTAUTHENDICATION_FAILURE_INVALID,
@@ -42,4 +38,5 @@ function* postauthendicationSaga(action) {
     }
   }
 }
+
 export default postauthendicationSaga;
