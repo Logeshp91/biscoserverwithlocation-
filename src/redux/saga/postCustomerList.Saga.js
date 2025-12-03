@@ -17,7 +17,7 @@ function* postCustomerListSaga(action) {
         requestKey,
       });
 
-      if (resolve) resolve(result); // ✅ correct return
+      if (resolve) resolve(result); 
     } else {
       yield put({
         type: actionTypes.POST_CUSTOMERLIST_FAILURE,

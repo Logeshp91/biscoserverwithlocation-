@@ -20,26 +20,8 @@ import {
 } from '../../redux/action';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CookieManager from '@react-native-cookies/cookies';
+import { storeSession } from '../../services/Apicall';
 
-// Store session in AsyncStorage + CookieManager
-const storeSession = async (serverUrl, sessionId) => {
-  const domain = new URL(serverUrl).hostname;
-
-  await AsyncStorage.setItem('session_id', sessionId);
-
-  await CookieManager.set(serverUrl, {
-    name: 'session_id',
-    value: sessionId,
-    domain: domain,
-    path: '/',
-    version: '1',
-    secure: serverUrl.startsWith('https'),
-    httpOnly: false,
-  });
-
-  const cookies = await CookieManager.get(serverUrl);
-  console.log('🍪 Cookies after setting session_id:', cookies);
-};
 
 const VerifyOtpScreen = ({ navigation, route }) => {
   const dispatch = useDispatch();
@@ -58,17 +40,10 @@ const VerifyOtpScreen = ({ navigation, route }) => {
     if (!postVerifyOtpLoading && postVerifyOtpData?.success && postVerifyOtpData?.session_id) {
       const handleSession = async () => {
         const sessionId = postVerifyOtpData.session_id;
-        const serverUrl = postVerifyOtpData.serverUrl || 'https://example.com';
-
-        await storeSession(serverUrl, sessionId);
-
-        Alert.alert(
-          'Welcome',
-          `Hello ${postVerifyOtpData.partner_display_name || ''}!`,
-          [{ text: 'OK', onPress: () => navigation.replace('Welcomescreen') }]
-        );
+        Alert.alert('Welcome!', '', [
+          { text: 'OK', onPress: () => navigation.replace('TabNavigation') },
+        ]);
       };
-
       handleSession();
     }
 
@@ -99,7 +74,8 @@ const VerifyOtpScreen = ({ navigation, route }) => {
       Alert.alert('Validation', 'Please enter a 6-digit OTP');
       return;
     }
-    dispatch(postVerifyOtp({ mobile: phone, otp }));
+    dispatch(postVerifyOtp({ mobile: phone, otp })); // No serverUrl needed
+    console.log("postVerifyOtp", postVerifyOtp)
   };
 
   const handleBackToLogin = () => {

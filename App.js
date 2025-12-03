@@ -7,6 +7,7 @@ import notifee, { AndroidImportance } from '@notifee/react-native';
 import BackgroundFetch from 'react-native-background-fetch';
 import { startLocationTracking, stopLocationTracking, isLocationEnabled } from './src/LoginModule/commonutils/LocationService';
 import { setFcmToken } from './src/redux/slices/fcmSlice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AppWrapper = () => (
   <Provider store={store}>
@@ -16,7 +17,18 @@ const AppWrapper = () => (
 
 const App = () => {
   const dispatch = useDispatch();
-const loggedIn = useSelector(state => state.postauthendicationReducer.isLoggedIn);
+const loggedIn = useSelector(state => state.postmobileauthReducer.isLoggedIn);
+
+useEffect(() => {
+  const initBaseUrl = async () => {
+    const savedUrl = await AsyncStorage.getItem("base_url");
+    if (savedUrl) {
+      dynamicBaseUrl = savedUrl;
+      console.log("🌍 Base URL initialized on app start:", savedUrl);
+    }
+  };
+  initBaseUrl();
+}, []);
 
 
 useEffect(() => {

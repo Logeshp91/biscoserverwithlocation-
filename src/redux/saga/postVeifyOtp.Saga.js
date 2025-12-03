@@ -14,9 +14,6 @@ function* postVerifyOtpSaga(action) {
       yield call([AsyncStorage, 'setItem'], 'session_id', result.session_id);
       yield call([AsyncStorage, 'setItem'], 'user_id', String(result.uid));
       yield call([AsyncStorage, 'setItem'], 'username', action.payload.mobile);
-
-      setBaseUrl(action.payload.serverUrl || '');
-
       yield put({
         type: actionTypes.VERIFY_OTP_SUCCESS,
         payload: result,

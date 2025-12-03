@@ -39,9 +39,9 @@ export const startLocationTracking = (callback) => {
         }
       },
       err => console.log("Location error:", err),
-      { enableHighAccuracy: true, timeout: 5000, maximumAge: 2000 }
+      { enableHighAccuracy: true, timeout: 6000, maximumAge: 2000 }
     );
-  }, 5000);
+  }, 6000);
 };
 
 export const stopLocationTracking = () => {

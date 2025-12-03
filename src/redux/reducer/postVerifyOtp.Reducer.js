@@ -6,6 +6,9 @@ const initialState = {
   postVerifyOtpError: null,
   postVerifyOtpErrorInvalid: null,
   isVerified: false,
+  isLoggedIn: false,
+  userId: null,
+  sessionId: null,
 };
 
 const postVerifyOtpReducer = (state = initialState, action) => {
@@ -14,10 +17,8 @@ const postVerifyOtpReducer = (state = initialState, action) => {
       return {
         ...state,
         postVerifyOtpLoading: true,
-        postVerifyOtpData: null,
         postVerifyOtpError: null,
         postVerifyOtpErrorInvalid: null,
-        isVerified: false,
       };
 
     case actionTypes.VERIFY_OTP_SUCCESS:
@@ -25,29 +26,28 @@ const postVerifyOtpReducer = (state = initialState, action) => {
         ...state,
         postVerifyOtpLoading: false,
         postVerifyOtpData: action.payload,
-        postVerifyOtpError: null,
-        postVerifyOtpErrorInvalid: null,
         isVerified: true,
+        isLoggedIn: true,
+        userId: action.payload?.result?.uid,
+        sessionId: action.payload?.result?.session_id,
       };
 
     case actionTypes.VERIFY_OTP_FAILURE:
       return {
         ...state,
         postVerifyOtpLoading: false,
-        postVerifyOtpData: null,
         postVerifyOtpError: action.payload,
-        postVerifyOtpErrorInvalid: null,
         isVerified: false,
+        isLoggedIn: false,
       };
 
     case actionTypes.VERIFY_OTP_FAILURE_INVALID:
       return {
         ...state,
         postVerifyOtpLoading: false,
-        postVerifyOtpData: null,
-        postVerifyOtpError: null,
         postVerifyOtpErrorInvalid: action.payload,
         isVerified: false,
+        isLoggedIn: false,
       };
 
     case actionTypes.CLEAR_VERIFY_OTP:

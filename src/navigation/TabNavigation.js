@@ -143,6 +143,7 @@ useEffect(() => {
     };
     console.log('📤 Sending location payload Tabnavigation:', JSON.stringify(body, null, 2));
     dispatch(postcreatevisit(body));
+
   };
 
   const tabIcons = {
@@ -153,9 +154,14 @@ useEffect(() => {
     Reports: { lib: MaterialIcons, active: 'bar-chart', inactive: 'bar-chart', size: 26 },
   };
 
-  useEffect(() => {
+useEffect(() => {
+  const timer = setInterval(() => {
     startLocationTracking();
-  }, []);
+    console.log("1-minute timer expired!");
+  }, 600000);
+
+  return () => clearInterval(timer); 
+}, []);
 
   useEffect(() => {
     if (isPanelVisible) {

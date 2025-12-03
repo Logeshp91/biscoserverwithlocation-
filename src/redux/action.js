@@ -4,6 +4,7 @@ export const postmobileauth = (payload) => ({
   type: actionTypes.POST_POSTMOBILEAUTH_REQUEST,
   payload
 });
+
 export const resetMobileAuth = () => ({ type: actionTypes.POST_POSTMOBILEAUTH_RESET });
 export const resetSendOtp = () => ({ type: actionTypes.SEND_OTP_RESET });
 export const clearVerifyOtp = () => ({

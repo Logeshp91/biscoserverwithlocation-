@@ -17,25 +17,5 @@ sagaMiddleware.run(rootSaga);
 
 export default store;
 
-// const createSagaMiddleware = require('redux-saga').default;
-// const { configureStore } = require('@reduxjs/toolkit');
-// const rootReducer = require('./reducer').default;
-// const rootSaga = require('./saga').default;
-
-// // Create the saga middleware
-// const sagaMiddleware = createSagaMiddleware();
-
-// // Configure the store
-// const store = configureStore({
-//   reducer: rootReducer,
-//   middleware: (getDefaultMiddleware) =>
-//     getDefaultMiddleware({ thunk: false }).concat(sagaMiddleware),
-// });
-
-// // Run the root saga
-// sagaMiddleware.run(rootSaga);
-
-// // Export the store
-// module.exports = store;
 
 

@@ -2,7 +2,9 @@ import axios from "axios";
 import CookieManager from '@react-native-cookies/cookies';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-let dynamicBaseUrl = null; // Base URL
+// let dynamicBaseUrl = "https://testserver.biztechnovations.com"
+let dynamicBaseUrl = null;
+
 let sessionId = null;       // Session stored in memory
 
 // Set Base URL dynamically
@@ -25,7 +27,12 @@ export const endPoint = {
 
 export const ApiMethod = {
   POST: async (url, data) => {
-    const server = dynamicBaseUrl || data?.serverUrl;
+
+   // -----------------------------------------------//here only getting problem when using this // static endpoint working but dynamic not working
+     const server = dynamicBaseUrl || data?.serverUrl;
+        // const server = "https://testserver.biztechnovations.com";
+
+    console.log("server",server)
     if (!server) throw new Error("Base URL not set!");
 
     if (!sessionId) {
@@ -57,7 +64,14 @@ export const ApiMethod = {
           await AsyncStorage.setItem('session_id', sessionId);
         }
       }
-
+      
+     if (url === endPoint.postverifyotp) {
+        const cookies = await CookieManager.get(dynamicBaseUrl);
+        if (cookies.session_id) {
+          sessionId = cookies.session_id.value;
+          await AsyncStorage.setItem('session_id', sessionId);
+        }
+      }
       return { data: resData, status: response.status };
 
     } catch (error) {
